@@ -63,7 +63,7 @@ func (r *runner) setLogger(logger *log.Logger) {
 
 // safeRun runs fn and recovers from unexpected panics.
 // it prevents panics from Task.Fn crashing boomer.
-func (r *runner) safeRun(fn func()) {
+func (r *runner) safeRun(ctx context.Context, task *Task) {
 	defer func() {
 		// don't panic
 		err := recover()
@@ -75,7 +75,7 @@ func (r *runner) safeRun(fn func()) {
 			os.Stderr.Write(stackTrace)
 		}
 	}()
-	fn()
+	task.Run(ctx)
 }
 
 func (r *runner) addOutput(o Output) {
@@ -137,7 +137,7 @@ func (r *runner) addWorkers(gapCount int) {
 		case <-r.shutdownChan:
 			return
 		default:
-			ctx, cancel := context.WithCancel(context.TODO())
+			ctx, cancel := context.WithCancel(context.Background())
 			r.cancelFuncs = append(r.cancelFuncs, cancel)
 			go func(ctx context.Context) {
 				index := 0
@@ -152,7 +152,7 @@ func (r *runner) addWorkers(gapCount int) {
 							blocked := r.rateLimiter.Acquire()
 							if !blocked {
 								task := r.getTask(index)
-								r.safeRun(task.Fn)
+								r.safeRun(ctx, task)
 								index++
 								if index == r.totalTaskWeight {
 									index = 0
@@ -160,7 +160,7 @@ func (r *runner) addWorkers(gapCount int) {
 							}
 						} else {
 							task := r.getTask(index)
-							r.safeRun(task.Fn)
+							r.safeRun(ctx, task)
 							index++
 							if index == r.totalTaskWeight {
 								index = 0

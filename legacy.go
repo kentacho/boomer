@@ -3,6 +3,7 @@
 package boomer
 
 import (
+	"context"
 	"flag"
 	"fmt"
 	"log"
@@ -164,7 +165,7 @@ func (ts *WeighingTaskSet) Run() {
 	r := rand.New(rand.NewSource(time.Now().UnixNano()))
 	roll := r.Intn(ts.offset)
 	task := ts.GetTask(roll)
-	task.Fn()
+	task.Run(context.Background())
 }
 
 func init() {

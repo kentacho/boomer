@@ -1,6 +1,7 @@
 package boomer
 
 import (
+	"context"
 	"log"
 	"sync"
 	"sync/atomic"
@@ -35,9 +36,11 @@ var _ = Describe("Test runner", func() {
 		Expect(func() {
 			runner := &runner{}
 			runner.setLogger(log.Default())
-			runner.safeRun(func() {
-				panic("Runner will catch this panic")
-			})
+			runner.safeRun(
+				context.Background(),
+				&Task{Fn: func() {
+					panic("Runner will catch this panic")
+				}})
 		}).Should(Not(Panic()))
 	})
 
